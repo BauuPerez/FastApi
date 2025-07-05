@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 app = FastAPI()
 
@@ -10,12 +10,21 @@ class Auto(BaseModel):
     marca: str
     modelo: str
 
+class AutoUpdate(BaseModel):
+    marca: Optional[str] = None
+    modelo: Optional[str] = None
+
 # Lista de todos los autos
 autos = [
     {"id": 1, "marca": "Ford", "modelo": "Mondeo"},
     {"id": 2, "marca": "Fiat", "modelo": "Uno"},
     {"id": 3, "marca": "Renault", "modelo": "Sandero"},
 ]
+# ...código existente...
+
+@app.get("/")
+def mensaje_inicio():
+    return {"mensaje": "Bienvenido a la API de autos. Visita /docs para ver la documentación y probar los endpoints."}
 
 # Obtener lista de todos los autos
 @app.get("/auto/ALL", response_model=List[Auto])
@@ -39,13 +48,25 @@ def crear_auto(auto: Auto):
     autos.append(auto.dict())  
     return auto
 
-# Para actualizar un auto por ID
+# Para actualizar un auto por ID (PUT)
 @app.put("/auto/{auto_id}", response_model=Auto)
 def actualizar_auto(auto_id: int, auto_actualizado: Auto):
     for index, auto in enumerate(autos):
         if auto["id"] == auto_id: 
             autos[index] = auto_actualizado.dict() 
             return auto_actualizado
+    raise HTTPException(status_code=404, detail="Auto no encontrado, ingrese un ID valido.")
+
+# Para actualizar parcialmente un auto por ID (PATCH)
+@app.patch("/auto/{auto_id}", response_model=Auto)
+def actualizar_parcial_auto(auto_id: int, auto_update: AutoUpdate):
+    for auto in autos:
+        if auto["id"] == auto_id:
+            if auto_update.marca is not None:
+                auto["marca"] = auto_update.marca
+            if auto_update.modelo is not None:
+                auto["modelo"] = auto_update.modelo
+            return auto
     raise HTTPException(status_code=404, detail="Auto no encontrado, ingrese un ID valido.")
 
 # Para eliminar un auto por ID
