@@ -1,4 +1,2 @@
 fastapi
-uvicorn
-vercel-python
 mangum
